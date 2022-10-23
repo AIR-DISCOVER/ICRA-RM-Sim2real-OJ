@@ -17,7 +17,7 @@ def trigger():
         pushed_image = data["event_data"]["resources"][0]["resource_url"]
         c = zerorpc.Client()
         c.connect("tcp://127.0.0.1:12034")
-        print(c.test(pushed_image))
+        print(c.add_task(pushed_image))
     return flask.Response(status=200)
 
 app.run(host="0.0.0.0", port=22022)
