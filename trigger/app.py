@@ -16,7 +16,7 @@ def trigger():
     if data['type'] == "PUSH_ARTIFACT":
         pushed_image = data["event_data"]["resources"][0]["resource_url"]
         c = zerorpc.Client()
-        c.connect("tcp://127.0.0.1:12033")
+        c.connect("tcp://127.0.0.1:12034")
         print(c.test(pushed_image))
     return flask.Response(status=200)
 
