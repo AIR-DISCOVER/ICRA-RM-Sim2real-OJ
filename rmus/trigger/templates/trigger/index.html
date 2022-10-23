@@ -1,0 +1,10 @@
+{% if testrun_list %}
+Current testruns:    
+    <ul>
+    {% for testrun in testrun_list %}
+        <li><a href="{% url 'trigger:status' testrun.id %}">{{ testrun.id }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No testruns exists.</p>
+{% endif %}
