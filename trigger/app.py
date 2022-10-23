@@ -5,14 +5,16 @@ import json
 app = flask.Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
-def login():
+def trigger():
     try:
         data = json.loads(flask.request.get_data())
     except json.JSONDecodeError:
         logging.error("Cannot parse body in JSON format")
         return flask.Response(status=500)
 
-    print(json.dumps(data, indent=4))
+    if data['type'] == "PUSH_ARTIFACT":
+        pushed_image = data["event_data"]["resources"]["resource_url"]
+        print(pushed_image)
     return flask.Response(status=200)
 
-app.run(host="0.0.0.0")
+app.run(host="0.0.0.0", port=22022)
