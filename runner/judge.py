@@ -118,7 +118,7 @@ class Runner:
                 stdin=True,
                 tty=True,
             ).output.decode('utf-8')
-            self.logger.info(result)
+            self.logger.info(str(i) + result)
             
             matched_list = re.findall(r"data\:\s\"(.*?),\s(.*?),\s(.*?)\"", result)
             if not len(matched_list) == 1:

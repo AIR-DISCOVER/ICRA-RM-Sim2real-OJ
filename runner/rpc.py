@@ -1,4 +1,5 @@
 import logging
+from pydoc import cli
 import uuid
 from .judge import run
 import zerorpc
@@ -14,7 +15,21 @@ class TaskManager(object):
     def add_task(self, client_image):
         if not type(client_image) == str:
             return None
-        id = uuid.uuid1()
+        id = str(uuid.uuid1())
+        current_waiting = [(k, v) for k, v in self.task_list.items()]
+        for old_id, old_task in current_waiting:
+            if client_image == old_task["image"]:
+                if old_task['status'] == "waiting":
+                    self.task_list.pop(old_id)
+                    self.task_list[id] = {"image": client_image, "status": "waiting"}
+                    return id
+                elif old_task['status'] == 'running':
+                    return None
+                elif old_task['status'] == 'finished':
+                    self.task_list[id] = {"image": client_image, "status": "waiting"}
+                    return id
+                else:
+                    return None
         self.task_list[id] = {"image": client_image, "status": "waiting"}
         return id
     
@@ -33,11 +48,17 @@ class TaskManager(object):
     
     def run(self):
         while True:
-            if len(self.task_list) > 0:
-                id = list(self.task_list.keys())[0]
-                self.task_list[id]["status"] = "running"
-                run(self.task_list[id]["image"])
-                self.task_list[id]["status"] = "finished"
+            try:
+                todo = [k for k, v in self.task_list.items() if v['status'] == 'waiting']
+                if len(todo) > 0:
+                    id = todo[0]
+                    self.task_list[id]["status"] = "running"
+                    result = run(self.task_list[id]["image"])
+                    print(result)
+                    self.task_list[id]["status"] = "finished"
+                    self.task_list[id]["result"] = result
+            except:
+                ...
 
 
 if __name__ == '__main__':
