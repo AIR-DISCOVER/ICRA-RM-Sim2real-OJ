@@ -161,5 +161,5 @@ def run(client_image: str, display: str = None, vis=True):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    client_image = "alpine:latest"
+    client_image = "docker.discover-lab.com:55555/rm-sim2real/client:latest"
     print(run(client_image))
