@@ -6,6 +6,8 @@ import uuid
 
 import docker
 
+from timeout import time_limit
+
 
 class Runner:
     def __init__(self, server_image, client_image, display:str=None) -> None:

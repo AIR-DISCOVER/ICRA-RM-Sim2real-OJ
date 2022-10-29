@@ -29,10 +29,38 @@ def status(request, id):
     else:
         raise Http404()
 
+# {
+#     'type': 'PUSH_ARTIFACT',
+#     'occur_at': 1667012162,
+#     'operator': 'admin',
+#     'event_data': {
+#         'resources': [{
+#             'digest':
+#             'sha256:b8e334e578a285fef66adbb134cae2f594c889eed85569d22830652283760b9e',
+#             'tag':
+#             'latest',
+#             'resource_url':
+#             'docker.discover-lab.com: 55555/rm-sim2real/client:latest'
+#         }],
+#         'repository': {
+#             'date_created': 1666503042,
+#             'name': 'client',
+#             'namespace': 'rm-sim2real',
+#             'repo_full_name': 'rm-sim2real/client',
+#             'repo_type': 'public'
+#         }
+#     }
+# }
+
 @csrf_exempt
 def create_testrun(request):
     try:
         assert request.method == 'POST'
+        if request.META.has_key('HTTP_X_FORWARDED_FOR'):
+            ip =  request.META['HTTP_X_FORWARDED_FOR']
+        else:
+            ip = request.META['REMOTE_ADDR']
+        assert ip == '127.0.0.1'
         jstring = request.body.decode('UTF-8')
         info = json.loads(jstring)
         assert 'submitter_name' in info.keys()
