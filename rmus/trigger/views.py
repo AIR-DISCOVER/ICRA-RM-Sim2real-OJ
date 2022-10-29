@@ -4,7 +4,8 @@ from django.http import JsonResponse, HttpResponseServerError, Http404
 from django.views.decorators.csrf import csrf_exempt
 import logging
 from .models import TestRun
-
+from .secret import AUTH_HEADER
+from .tasks import async_handle
 
 # Create your views here.
 def index(request):
@@ -18,14 +19,8 @@ def status(request, id):
     testrun = TestRun.objects.filter(id=id)
     if testrun.count() > 0:
         testrun = testrun.get(id=id)
-        return render(request, 'trigger/status.html', {
-            'id': testrun.id,
-            'status': testrun.STATS_DICT.get(testrun.status, 'Unknown'),
-            'submit_id': testrun.submitter_id,
-            'submit_name': testrun.submitter_name,
-            'time': testrun.submit_time,
-            'result': testrun.result,
-        })
+        return render(request, 'trigger/status.html', 
+        {''.join(k.split()): v for k, v in testrun.status_dict().items()})
     else:
         raise Http404()
 
@@ -40,7 +35,7 @@ def status(request, id):
 #             'tag':
 #             'latest',
 #             'resource_url':
-#             'docker.discover-lab.com: 55555/rm-sim2real/client:latest'
+#             'docker.discover-lab.com:55555/rm-sim2real/client:latest'
 #         }],
 #         'repository': {
 #             'date_created': 1666503042,
@@ -55,26 +50,33 @@ def status(request, id):
 @csrf_exempt
 def create_testrun(request):
     try:
+        assert request.META["HTTP_AUTHORIZATION"] == AUTH_HEADER
         assert request.method == 'POST'
-        if request.META.has_key('HTTP_X_FORWARDED_FOR'):
-            ip =  request.META['HTTP_X_FORWARDED_FOR']
-        else:
-            ip = request.META['REMOTE_ADDR']
-        assert ip == '127.0.0.1'
         jstring = request.body.decode('UTF-8')
         info = json.loads(jstring)
-        assert 'submitter_name' in info.keys()
-        assert 'submitter_id' in info.keys()
-        assert info['authkey'] == '08D10441-1F98-4656-97D8-AB31BAF216EA'
+        logging.info(info)
+        submitter = info['operator']
+        timestamp = int(info['occur_at'])
+        repo = info['event_data']['repository']['repo_full_name']
+        tag = info['event_data']['resources'][0]['resource_url'].split(':')[-1]
+        digest = info['event_data']['resources'][0]['digest']
+        print(repo, tag, digest)
         run = TestRun(
-            submitter_name=info['submitter_name'],
-            submitter_id=info['submitter_id'],
+            submit_time=timestamp,
+            submitter=submitter,
+            image_name=repo,
+            image_tag=tag,
+            image_digest=digest,
         )
         run.save()
+
+        async_handle(run)
         return JsonResponse({'testrun_id': run.id})
     except Exception as e:
+        logging.error(type(e))
         logging.error(e)
         return HttpResponseServerError()
+
 
 
 def update_testrun(request):

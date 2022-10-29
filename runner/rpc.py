@@ -41,10 +41,10 @@ class TaskManager(object):
     
     def query_task(self, id):
         if not type(id) == str:
-            return None
+            return None, None
         if id not in self.task_list.keys():
-            return None
-        return self.task_list[id]["status"]
+            return "not found", None
+        return self.task_list[id]["status"], self.task_list[id].get("result", None)
     
     def run(self):
         while True:

@@ -2,7 +2,7 @@
 Current testruns:    
     <ul>
     {% for testrun in testrun_list %}
-        <li><a href="{% url 'trigger:status' testrun.id %}">{{ testrun.id }}</a></li>
+        <li><a href="{% url 'trigger:status' testrun.id %}">{{ testrun.status }} - {{ testrun.image_name }}:{{ testrun.image_tag }} - {{ testrun.submit_time }}</a></li>
     {% endfor %}
     </ul>
 {% else %}

@@ -1,38 +1,55 @@
+from email.policy import default
 from django.db import models
 
 
 # Create your models here.
 class TestRun(models.Model):
-    SUBMITTED = "SUB"
-    WAITING = "WAIT"
-    RUNNING = "RUN"
-    FINISHED = "FIN"
-    ERROR = "ERR"
-    UNKNOWN = "UNK"
+    SUBMITTED = "SUBMITTED"
+    WAITING = "WAITING"
+    RUNNING = "RUNNING"
+    FINISHED = "FINISHED"
+    ERROR = "ERROR"
+    RETRY = "RETRYING"
+    UNKNOWN = "UNKKNOWN"
     STATS = [
-        (SUBMITTED, "Submitted"),
         (WAITING, 'Waiting'),
         (RUNNING, 'Running'),
         (FINISHED, 'Finished'),
         (ERROR, "Error occurred"),
         (UNKNOWN, "Unknown status"),
+        (RETRY, "Retrying")
     ]
     STATS_DICT = {i[0]: i[1] for i in STATS}
 
     submit_time = models.DateTimeField("Submit Time", auto_now_add=True)
-    status = models.CharField("Status", max_length=4, choices=STATS, default=SUBMITTED)
-    result = models.TextField("Run Result", max_length=1000)
-    submitter_name = models.CharField("Name of Submitter", max_length=20)
-    submitter_id = models.CharField("ID of submitter", max_length=12)
+    submitter = models.CharField("Name of Submitter", max_length=100)
+    image_name = models.CharField("Image name", max_length=200)
+    image_tag = models.CharField("Image tag", max_length=100)
+    image_digest = models.CharField("Image digest", max_length=200)
 
-    def status_lines(self) -> str:
-        status = [
-            f"Run ID: {self.id}",
-            f"Status: {self.STATS_DICT[self.status]}",
-            f"Submit Time: {self.submit_time}",
-            f"Result: {self.result}",
-        ]
+    runner_id = models.CharField("Runner ID", default="None", max_length=100)
+
+    status = models.CharField("Status",
+                              max_length=10,
+                              choices=STATS,
+                              default=WAITING)
+    result = models.TextField("Run Result", max_length=1000)
+
+    def status_dict(self) -> dict:
+        status = {
+            "Run ID": self.id,
+            "Runner ID": self.runner_id,
+            "Status": self.STATS_DICT[self.status],
+            "Run Result": self.result,
+            "Submit Time": self.submit_time,
+            "Name of Submitter": self.submitter,
+            "Image Name": self.image_name,
+            "Image Tag": self.image_tag,
+            "Image Digest": self.image_digest,
+        }
         return status
 
-    __str__ = lambda self: ' '.join(self.status_lines())
-    format = lambda self: '<br />'.join(self.status_lines())
+    format = lambda self: '<br />'.join(
+        [f"{k}:\t{v}" for k, v in self.status_dict().items()])
+
+    __str__ = lambda self: ' '.join([i for i in self.status_dict().values()])
