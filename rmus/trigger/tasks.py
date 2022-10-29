@@ -5,6 +5,7 @@ from datetime import timedelta
 from .models import TestRun
 from .rpc import query, submit
 
+SCHEDULE_INTERVAL = 2
 
 def handle(testrun_id: str):
     testrun = TestRun.objects.filter(id=testrun_id)
@@ -18,7 +19,7 @@ def handle(testrun_id: str):
             schedule("trigger.tasks.handle",
                      testrun.id,
                      schedule_type=Schedule.ONCE,
-                     next_run=timezone.now() + timedelta(seconds=10))
+                     next_run=timezone.now() + timedelta(seconds=SCHEDULE_INTERVAL))
         elif id == 'invalid':
             testrun.status = TestRun.ERROR
             testrun.save()
@@ -29,14 +30,14 @@ def handle(testrun_id: str):
             schedule("trigger.tasks.handle",
                      testrun.id,
                      schedule_type=Schedule.ONCE,
-                     next_run=timezone.now() + timedelta(seconds=10))
+                     next_run=timezone.now() + timedelta(seconds=SCHEDULE_INTERVAL))
     else:
         status, result = query(testrun.runner_id)
         if status != 'finished':
             schedule("trigger.tasks.handle",
                      testrun.id,
                      schedule_type=Schedule.ONCE,
-                     next_run=timezone.now() + timedelta(seconds=10))
+                     next_run=timezone.now() + timedelta(seconds=SCHEDULE_INTERVAL))
         if testrun.status == TestRun.WAITING:
             if status == 'waiting':
                 pass
