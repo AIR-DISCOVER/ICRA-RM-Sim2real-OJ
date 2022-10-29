@@ -13,3 +13,8 @@ def time_limit(seconds):
         yield
     finally:
         signal.alarm(0)
+
+if __name__ == '__main__':
+    with time_limit(3):
+        import time
+        time.sleep(10)

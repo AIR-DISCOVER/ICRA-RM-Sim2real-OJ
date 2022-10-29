@@ -9,8 +9,8 @@ class TaskManager(object):
     def __init__(self) -> None:
         self.task_list = {}
         self.finished_task = {}
-        thread = threading.Thread(target=self.run)
-        thread.start()
+        self.thread = threading.Thread(target=self.run)
+        self.thread.start()
 
     def add_task(self, client_image):
         if not type(client_image) == str:
@@ -65,4 +65,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     s = zerorpc.Server(TaskManager())
     s.bind("tcp://127.0.0.1:12034")
-    s.run()
+    try:
+        s.run()
+    except KeyboardInterrupt as e:
+        ...

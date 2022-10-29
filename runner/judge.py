@@ -6,7 +6,7 @@ import uuid
 
 import docker
 
-from timeout import time_limit
+from .timeout import TimeoutException, time_limit
 
 
 class Runner:
@@ -45,7 +45,7 @@ class Runner:
             self.server_image,
             tty=True,
             stdin_open=True,
-            remove=True,
+            remove=True, # FIXME
             detach=True,
             runtime='nvidia',
             name=f"server-{self.id}",
@@ -138,19 +138,28 @@ class Runner:
         return result    
 
 def run(client_image: str, display: str = None, vis=True):
-    server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
     try:
+        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
         runner = Runner(server_image, client_image, display=display)
         runner.create(vis=vis, wait_sec=15)
+        # with time_limit(360):
         result = runner.run()
-        runner.remove()
-    except:
-        runner.remove()
-        raise
+    except TimeoutException:
+        result = "timeout"
+    except Exception as e:
+        print(type(e))
+        print(e)
+        result = 'error'
+    finally:
+        try:
+            runner.remove()
+        except:
+            ...
+            
     return result
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    client_image = "docker.discover-lab.com:55555/rm-sim2real/client:latest"
-    run(client_image)
+    client_image = "alpine:latest"
+    print(run(client_image))
