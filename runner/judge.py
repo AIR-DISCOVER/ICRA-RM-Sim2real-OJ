@@ -20,7 +20,7 @@ class Runner:
         self.docker_exe = docker.from_env()
 
         try:
-            self.docker_exe.images.pull(client_image)
+            self.docker_exe.images.pull(server_image)
         except:
             self.logger.error("Server image is not found.")
         try:
