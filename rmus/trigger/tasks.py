@@ -6,30 +6,35 @@ from .models import TestRun
 from .rpc import query, submit
 
 
-def async_handle(testrun: TestRun):
-    async_task(handle, testrun)
-
-
-def handle(testrun: TestRun):
+def handle(testrun_id: str):
+    testrun = TestRun.objects.filter(id=testrun_id)
+    if testrun.count() > 0:
+        testrun = testrun.get(id=testrun_id)
+    else:
+        assert False, "unable to get testrun"
     if testrun.status == TestRun.SUBMITTED:
-        # May take long time
-        id = submit(testrun)
+        id = submit(f"docker.discover-lab.com:55555/{testrun.image_name}@{testrun.image_digest}")
         if id is None:
+            schedule("trigger.tasks.handle",
+                     testrun.id,
+                     schedule_type=Schedule.ONCE,
+                     next_run=timezone.now() + timedelta(seconds=10))
+        elif id == 'invalid':
             testrun.status = TestRun.ERROR
             testrun.save()
         else:
             testrun.status = TestRun.WAITING
             testrun.runner_id = id
             testrun.save()
-            schedule(handle,
-                     testrun,
+            schedule("trigger.tasks.handle",
+                     testrun.id,
                      schedule_type=Schedule.ONCE,
                      next_run=timezone.now() + timedelta(seconds=10))
     else:
         status, result = query(testrun.runner_id)
         if status != 'finished':
-            schedule(handle,
-                     testrun,
+            schedule("trigger.tasks.handle",
+                     testrun.id,
                      schedule_type=Schedule.ONCE,
                      next_run=timezone.now() + timedelta(seconds=10))
         if testrun.status == TestRun.WAITING:

@@ -5,7 +5,11 @@ from django.views.decorators.csrf import csrf_exempt
 import logging
 from .models import TestRun
 from .secret import AUTH_HEADER
-from .tasks import async_handle
+from django_q.tasks import async_task, schedule
+from django_q.models import Schedule
+from django.utils import timezone
+from datetime import timedelta
+
 
 # Create your views here.
 def index(request):
@@ -19,10 +23,13 @@ def status(request, id):
     testrun = TestRun.objects.filter(id=id)
     if testrun.count() > 0:
         testrun = testrun.get(id=id)
-        return render(request, 'trigger/status.html', 
-        {''.join(k.split()): v for k, v in testrun.status_dict().items()})
+        return render(
+            request, 'trigger/status.html',
+            {''.join(k.split()): v
+             for k, v in testrun.status_dict().items()})
     else:
         raise Http404()
+
 
 # {
 #     'type': 'PUSH_ARTIFACT',
@@ -47,6 +54,7 @@ def status(request, id):
 #     }
 # }
 
+
 @csrf_exempt
 def create_testrun(request):
     try:
@@ -70,13 +78,14 @@ def create_testrun(request):
         )
         run.save()
 
-        async_handle(run)
+        # async_handle(run)
+        async_task("trigger.tasks.handle", run.id)
+        print(f"Scheduled at " + str(timezone.now() + timedelta(seconds=10)))
         return JsonResponse({'testrun_id': run.id})
     except Exception as e:
         logging.error(type(e))
         logging.error(e)
         return HttpResponseServerError()
-
 
 
 def update_testrun(request):

@@ -14,7 +14,7 @@ class TaskManager(object):
 
     def add_task(self, client_image):
         if not type(client_image) == str:
-            return None
+            return 'invalid'
         id = str(uuid.uuid1())
         current_waiting = [(k, v) for k, v in self.task_list.items()]
         for old_id, old_task in current_waiting:
@@ -24,12 +24,12 @@ class TaskManager(object):
                     self.task_list[id] = {"image": client_image, "status": "waiting"}
                     return id
                 elif old_task['status'] == 'running':
-                    return None
+                    return 'invalid'
                 elif old_task['status'] == 'finished':
                     self.task_list[id] = {"image": client_image, "status": "waiting"}
                     return id
                 else:
-                    return None
+                    return 'invalid'
         self.task_list[id] = {"image": client_image, "status": "waiting"}
         return id
     

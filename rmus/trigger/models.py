@@ -12,6 +12,7 @@ class TestRun(models.Model):
     RETRY = "RETRYING"
     UNKNOWN = "UNKKNOWN"
     STATS = [
+        (SUBMITTED, 'Submitted'),
         (WAITING, 'Waiting'),
         (RUNNING, 'Running'),
         (FINISHED, 'Finished'),
@@ -32,7 +33,7 @@ class TestRun(models.Model):
     status = models.CharField("Status",
                               max_length=10,
                               choices=STATS,
-                              default=WAITING)
+                              default=SUBMITTED)
     result = models.TextField("Run Result", max_length=1000)
 
     def status_dict(self) -> dict:
@@ -52,4 +53,4 @@ class TestRun(models.Model):
     format = lambda self: '<br />'.join(
         [f"{k}:\t{v}" for k, v in self.status_dict().items()])
 
-    __str__ = lambda self: ' '.join([i for i in self.status_dict().values()])
+    __str__ = lambda self: '-'.join([str(i) for i in self.status_dict().values()])
