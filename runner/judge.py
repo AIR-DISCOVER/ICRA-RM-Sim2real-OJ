@@ -7,7 +7,7 @@ import uuid
 import docker
 
 from .timeout import TimeoutException, time_limit
-
+from .upload_log import upload_log
 
 class Runner:
     def __init__(self, server_image, client_image, display:str=None) -> None:
@@ -28,7 +28,7 @@ class Runner:
         except:
             self.logger.error("Client image is not found.")
 
-    def create(self, vis=True, wait_sec=15, debug=False):
+    def create(self, vis=False, wait_sec=15, debug=False):
         self.network = self.docker_exe.networks.create(f"net-{self.id}")
         self.ros_master = self.docker_exe.containers.run(
             'ros:noetic-ros-core-focal',
@@ -135,15 +135,19 @@ class Runner:
                     result = max(result)
                     break
             time.sleep(1)
-        return result    
+            result = float('inf')
+        server_log = self.server.logs().decode('utf-8')
+        client_log = self.client.logs().decode('utf-8')
+        return result, server_log, client_log
 
-def run(client_image: str, display: str = None, vis=True):
+def run(client_image: str, display: str = None, vis=False, run_id=None  ):
     try:
-        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
+        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:v5.0.0"
         runner = Runner(server_image, client_image, display=display)
         runner.create(vis=vis, wait_sec=15)
         # with time_limit(360):
-        result = runner.run()
+        result, server_log, client_log = runner.run()
+        upload_log(run_id, server_log, client_log)
     except TimeoutException:
         result = "timeout"
     except Exception as e:
@@ -161,5 +165,5 @@ def run(client_image: str, display: str = None, vis=True):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    client_image = "alpine:latest"
-    print(run(client_image))
+    client_image = "docker.discover-lab.com:55555/rm-sim2real/client:tagtest"
+    print(run(client_image, 1))
