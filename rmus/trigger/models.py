@@ -29,6 +29,8 @@ class TestRun(models.Model):
     image_digest = models.CharField("Image digest", max_length=200)
 
     runner_id = models.CharField("Runner ID", default="None", max_length=100)
+    video_link = models.CharField("Video Link", default="None", max_length=400)
+    testrun_type = models.CharField("Type", default="Sim", max_length=10)
 
     status = models.CharField("Status",
                               max_length=10,
@@ -36,6 +38,7 @@ class TestRun(models.Model):
                               default=SUBMITTED)
     result = models.TextField("Run Result", max_length=1000)
 
+    log_file = models.FileField()
     def status_dict(self) -> dict:
         status = {
             "Run ID": self.id,
@@ -47,6 +50,8 @@ class TestRun(models.Model):
             "Image Name": self.image_name,
             "Image Tag": self.image_tag,
             "Image Digest": self.image_digest,
+            "Video Link": self.video_link,
+            "Type": self.testrun_type,
         }
         return status
 

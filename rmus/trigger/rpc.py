@@ -3,11 +3,11 @@ import logging
 from .secret import *
 
 
-def submit(cli_image):
+def submit(cli_image, testrun_id):
     try:
         c = zerorpc.Client(timeout=10)
         c.connect(RPC_URL)
-        id = c.add_task(cli_image)
+        id = c.add_task(cli_image, testrun_id)
     except zerorpc.exceptions.LostRemote as e:
         id = None
         logging.warning('No connection to runner')
@@ -15,6 +15,8 @@ def submit(cli_image):
         id = None
         logging.warning('No connection to runner')
     except Exception as e:
+        logging.error(type(e))
+        logging.error(e)
         logging.warning('Other exceptions')
     return id
 
