@@ -1,21 +1,39 @@
 <p>    
-    Run ID: {{ RunID }}
+    Run ID: {{ object.id }}
 </p>
 <p>    
-    Status: {{ Status }}
+    Runner ID: {{ object.runner_id }}
 </p>
 <p>    
-    Submit Time: {{ SubmitTime }}
+    Status: {{ object.status }}
 </p>
 <p>    
-    Submitter Name: {{ NameofSubmitter }}
+    Type: {{ object.testrun_type }}
 </p>
 <p>    
-    Image Name: {{ ImageName }}
+    Submit Time: {{ object.submit_time }}
 </p>
 <p>    
-    Image Tag: {{ ImageTag }}
+    Submitter Name: {{ object.submitter }}
 </p>
 <p>    
-    Result: {{ RunResult }}
+    Image Name: {{ object.image_name }}
 </p>
+<p>    
+    Image Tag: {{ object.image_tag }}
+</p>
+<p>    
+    Result: {{ object.result }}
+</p>
+<p>    
+    Video Link: {{ object.video_link }}
+</p>
+{% if object.log_file %}
+<p>
+    Log file: <a href="{{ log_file_url }}" download="log.txt">Download</a>
+</p>
+{% else %}
+<p>    
+    Log file is not available right now.
+</p>
+{% endif %}

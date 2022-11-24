@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+from .secret import SECRET_KEY
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-km4e8#6phfzxhoaly^*474q!8ktv1aoxao)gekazp45*2+=e-g'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.0.0.236', '127.0.0.1']
+ALLOWED_HOSTS = ['sim2real.discover-lab.com', '10.0.0.236', '127.0.0.1']
 
 
 # Application definition
@@ -117,7 +117,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
+STATIC_ROOT = '/opt/cloudroot/static'
+MEDIA_ROOT = '/opt/cloudroot/media'
 STATIC_URL = 'static/'
+MEDIA_URL = 'media/'
+CSRF_TRUSTED_ORIGINS = ['https://sim2real.discover-lab.com:11011']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

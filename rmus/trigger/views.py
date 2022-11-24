@@ -23,10 +23,12 @@ def status(request, id):
     testrun = TestRun.objects.filter(id=id)
     if testrun.count() > 0:
         testrun = testrun.get(id=id)
+        log_file_url = testrun.log_file.url if testrun.log_file and hasattr(testrun.log_file, 'url') else None
+        # from IPython import embed
+        # embed()
         return render(
             request, 'trigger/status.html',
-            {''.join(k.split()): v
-             for k, v in testrun.status_dict().items()})
+            {'object': testrun, 'log_file_url': log_file_url})
     else:
         raise Http404()
 
@@ -88,5 +90,108 @@ def create_testrun(request):
         return HttpResponseServerError()
 
 
-def update_testrun(request):
-    ...
+# {
+#     "runner": "None",
+#     "status": "SUBMITTED",
+#     "run_result": "time of evalutaion",
+#     "submit_time": 1667012162,
+#     "submitter": 'Name',
+#     "image_name": 'docker.discover-lab.com:55555/repo/image',
+#     "image_tag": 'latest',
+#     "image_digest": 'sha256:abcdef...xx',
+#     "video_link": 'https://...',
+#     "log": "logabcdef",
+# }
+
+@csrf_exempt
+def create_real_testrun(request):
+    try:
+        # for k in sorted(request.META):
+        #     print(k, request.META[k])
+        assert request.META["HTTP_AUTHORIZATION"] == AUTH_HEADER
+        print(request.META["HTTP_AUTHORIZATION"])
+        print(request.method)
+        assert request.method == 'POST'
+        jstring = request.body.decode('UTF-8')
+        info = json.loads(jstring)
+        logging.info(info)
+
+        run = TestRun(
+            submit_time=info['submit_time'],
+            submitter=info['submitter'],
+            image_name=info['image_name'],
+            image_tag=info['image_tag'],
+            image_digest=info['image_digest'],
+            video_link=info['video_link'],
+            log=info['log'],
+            testrun_type='Real',
+        )
+        run.save()
+        return JsonResponse({'testrun_id': run.id})
+
+    except Exception as e:
+        logging.error(type(e))
+        logging.error(e)
+        return HttpResponseServerError()
+
+
+# {
+#     "id": "1112",
+#     "runner": "None",
+#     "status": "FINISHED",
+#     "run_result": "104s",
+#     "video_link": 'https://...',
+#     "log": "log text",
+# }
+
+@csrf_exempt
+def update_real_testrun(request):
+    try:
+        assert request.META["HTTP_AUTHORIZATION"] == AUTH_HEADER
+        assert request.method == 'POST'
+        jstring = request.body.decode('UTF-8')
+        info = json.loads(jstring)
+        logging.info(info)
+
+        run = TestRun.objects.filter(id=int(info['id']))
+        if run.count() > 0:
+            run = run.get(id=int(info['id']))
+        else:
+            return JsonResponse({'testrun_id': None})
+
+        if 'runner' in info:
+            run.runner_id = info['runner']
+        if 'status' in info:
+            run.status = info['status']
+        if 'run_result' in info:
+            run.result = info['run_result']
+        if 'video_link' in info:
+            run.video_link = info['video_link']
+        if 'log' in info:
+            run.log = info['log']
+        run.save()
+        return JsonResponse({'testrun_id': run.id})
+
+    except Exception as e:
+        logging.error(type(e))
+        logging.error(e)
+        return HttpResponseServerError()
+
+@csrf_exempt
+def upload_log(request, id):
+    try:
+        assert request.META["HTTP_AUTHORIZATION"] == AUTH_HEADER
+        assert request.method == 'POST'
+        run = TestRun.objects.filter(id=id)
+        if run.count() > 0:
+            run = run.get(id=id)
+        else:
+            return JsonResponse({'testrun_id': None})
+        run.log_file = request.FILES['log_file']
+        run.save()
+        return JsonResponse({'testrun_id': run.id})
+
+    except Exception as e:
+        logging.error(type(e))
+        logging.error(e)
+        return HttpResponseServerError()
