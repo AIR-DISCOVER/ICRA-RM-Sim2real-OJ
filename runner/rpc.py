@@ -71,4 +71,5 @@ if __name__ == '__main__':
     try:
         s.run()
     except KeyboardInterrupt as e:
-        ...
+        print(type(e))
+        print(e)

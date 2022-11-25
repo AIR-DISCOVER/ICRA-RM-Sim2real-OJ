@@ -113,7 +113,14 @@ class Runner:
             self.logger.warning(e)
 
     def run(self):
-        result = float('inf')
+        result = [float('inf') for _ in range(3)]
+        self.client.exec_run(
+            '''/opt/ros/noetic/env.sh /opt/workspace/devel_isolated/env.sh /opt/ep_ws/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point "x: 0.0
+y: 0.0
+z: 0.0"''',
+            stdin=True,
+            tty=True,
+        ).output.decode('utf-8')
         for i in range(300):
             result = self.ros_master.exec_run(
                 '/opt/ros/noetic/env.sh rostopic echo -n 1 /judgement/markers_time',
@@ -127,7 +134,7 @@ class Runner:
                 self.logger.warning("Data published by /judgement/markers_time has invalid form")
             matched_result = matched_list[0]
             if matched_result[0] == "None":
-                result = None
+                result = "Illegal"
                 break
             else:
                 result = [float(i) for i in matched_result]
@@ -135,14 +142,14 @@ class Runner:
                     result = max(result)
                     break
             time.sleep(1)
-            result = float('inf')
+            result = [float('inf') for i in result if i < 1e-5]
         server_log = self.server.logs().decode('utf-8')
         client_log = self.client.logs().decode('utf-8')
         return result, server_log, client_log
 
 def run(client_image: str, display: str = None, vis=False, run_id=None  ):
     try:
-        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:v5.0.0"
+        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
         runner = Runner(server_image, client_image, display=display)
         runner.create(vis=vis, wait_sec=15)
         # with time_limit(360):
