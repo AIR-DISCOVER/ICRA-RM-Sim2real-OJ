@@ -4,7 +4,7 @@ from django.http import JsonResponse, HttpResponseServerError, Http404
 from django.views.decorators.csrf import csrf_exempt
 import logging
 from .models import TestRun
-from .secret import AUTH_HEADER
+from .secret import AUTH_HEADER, USER_AUTH_HEADER
 from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
 from django.utils import timezone
@@ -60,7 +60,7 @@ def status(request, id):
 @csrf_exempt
 def create_testrun(request):
     try:
-        assert request.META["HTTP_AUTHORIZATION"] == AUTH_HEADER
+        assert request.META["HTTP_AUTHORIZATION"] == USER_AUTH_HEADER
         assert request.method == 'POST'
         jstring = request.body.decode('UTF-8')
         info = json.loads(jstring)
@@ -82,7 +82,7 @@ def create_testrun(request):
 
         # async_handle(run)
         async_task("trigger.tasks.handle", run.id)
-        print(f"Scheduled at " + str(timezone.now() + timedelta(seconds=10)))
+        logging.info(f"Scheduled at " + str(timezone.now() + timedelta(seconds=10)))
         return JsonResponse({'testrun_id': run.id})
     except Exception as e:
         logging.error(type(e))
@@ -123,7 +123,6 @@ def create_real_testrun(request):
             image_tag=info['image_tag'],
             image_digest=info['image_digest'],
             video_link=info['video_link'],
-            log=info['log'],
             testrun_type='Real',
         )
         run.save()

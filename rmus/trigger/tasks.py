@@ -15,8 +15,6 @@ def handle(testrun_id: str):
         assert False, "unable to get testrun"
     if testrun.status == TestRun.SUBMITTED:
         id = submit(f"docker.discover-lab.com:55555/{testrun.image_name}@{testrun.image_digest}", testrun_id)
-        testrun.runner_id = id
-        testrun.save()
         if id is None:
             schedule("trigger.tasks.handle",
                      testrun.id,
