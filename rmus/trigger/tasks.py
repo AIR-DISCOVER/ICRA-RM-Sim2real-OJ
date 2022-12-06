@@ -7,14 +7,14 @@ from .rpc import query, submit
 
 SCHEDULE_INTERVAL = 2
 
-def handle(testrun_id: str):
+def handle(testrun_id: str, run_type: int = 1):
     testrun = TestRun.objects.filter(id=testrun_id)
     if testrun.count() > 0:
         testrun = testrun.get(id=testrun_id)
     else:
         assert False, "unable to get testrun"
     if testrun.status == TestRun.SUBMITTED:
-        id = submit(f"docker.discover-lab.com:55555/{testrun.image_name}@{testrun.image_digest}", testrun_id)
+        id = submit(f"docker.discover-lab.com:55555/{testrun.image_name}@{testrun.image_digest}", testrun_id, run_type)
         if id is None:
             schedule("trigger.tasks.handle",
                      testrun.id,

@@ -14,7 +14,7 @@ class TaskManager(object):
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
 
-    def add_task(self, client_image, testrun_id):
+    def add_task(self, client_image, testrun_id, run_type=1):
         if not type(client_image) == str:
             return 'invalid'
         id = str(uuid.uuid1())
@@ -32,7 +32,7 @@ class TaskManager(object):
                     return id
                 else:
                     return 'invalid'
-        self.task_list[id] = {"image": client_image, "status": "waiting", "trigger_run_id": testrun_id}
+        self.task_list[id] = {"image": client_image, "status": "waiting", "trigger_run_id": testrun_id, "run_type": run_type}
         return id
     
     def get_task_list(self):
@@ -55,7 +55,7 @@ class TaskManager(object):
                 if len(todo) > 0:
                     id = todo[0]
                     self.task_list[id]["status"] = "running"
-                    result = run(self.task_list[id]["image"], run_id=self.task_list[id]["trigger_run_id"])
+                    result = run(self.task_list[id]["image"], run_id=self.task_list[id]["trigger_run_id"], run_type=self.task_list[id]['run_type'])
                     print(result)
                     self.task_list[id]["status"] = "finished"
                     self.task_list[id]["result"] = result

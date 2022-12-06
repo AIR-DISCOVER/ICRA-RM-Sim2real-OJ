@@ -37,6 +37,7 @@ class TestRun(models.Model):
                               choices=STATS,
                               default=SUBMITTED)
     result = models.TextField("Run Result", max_length=1000)
+    run_type = models.IntegerField("Run Type")
 
     log_file = models.FileField()
     def status_dict(self) -> dict:

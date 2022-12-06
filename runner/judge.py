@@ -10,11 +10,12 @@ from .timeout import TimeoutException, time_limit
 from .upload_log import upload_log
 
 class Runner:
-    def __init__(self, server_image, client_image, display:str=None) -> None:
+    def __init__(self, server_image, client_image, display:str=None, run_type=1) -> None:
         self.server_image = server_image
         self.client_image = client_image
         self.id = uuid.uuid1()
         self.logger = logging.getLogger(client_image)
+        self.type = run_type
         self.DISPLAY = display if display is not None else os.environ['DISPLAY']
         
         self.docker_exe = docker.from_env()
@@ -114,13 +115,14 @@ class Runner:
 
     def run(self):
         result = [float('inf') for _ in range(3)]
-        self.client.exec_run(
-            '''/opt/ros/noetic/env.sh /opt/workspace/devel_isolated/env.sh /opt/ep_ws/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point "x: 0.0
-y: 0.0
-z: 0.0"''',
-            stdin=True,
-            tty=True,
-        ).output.decode('utf-8')
+        if self.type != 1:
+            self.client.exec_run(
+                '''/opt/ros/noetic/env.sh /opt/workspace/devel_isolated/env.sh /opt/ep_ws/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point "x: 0.0
+    y: 0.0
+    z: 0.0"''',
+                stdin=True,
+                tty=True,
+            ).output.decode('utf-8')
         for i in range(300):
             result = self.ros_master.exec_run(
                 '/opt/ros/noetic/env.sh rostopic echo -n 1 /judgement/markers_time',
@@ -147,10 +149,11 @@ z: 0.0"''',
         client_log = self.client.logs().decode('utf-8')
         return result, server_log, client_log
 
-def run(client_image: str, display: str = None, vis=False, run_id=None  ):
+def run(client_image: str, display: str = None, vis=False, run_id=None, run_type=1):
     try:
-        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
-        runner = Runner(server_image, client_image, display=display)
+        # server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
+        server_image = "tb5zhh/icra-2023-server:latest"
+        runner = Runner(server_image, client_image, display=display, run_type=run_type)
         runner.create(vis=vis, wait_sec=15)
         # with time_limit(360):
         result, server_log, client_log = runner.run()

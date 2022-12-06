@@ -58,7 +58,7 @@ def status(request, id):
 
 
 @csrf_exempt
-def create_testrun(request):
+def create_testrun(request, run_type=1):
     try:
         assert request.META["HTTP_AUTHORIZATION"] == USER_AUTH_HEADER
         assert request.method == 'POST'
@@ -77,11 +77,12 @@ def create_testrun(request):
             image_name=repo,
             image_tag=tag,
             image_digest=digest,
+            run_type=run_type
         )
         run.save()
 
         # async_handle(run)
-        async_task("trigger.tasks.handle", run.id)
+        async_task("trigger.tasks.handle", run.id, run.run_type)
         logging.info(f"Scheduled at " + str(timezone.now() + timedelta(seconds=10)))
         return JsonResponse({'testrun_id': run.id})
     except Exception as e:
