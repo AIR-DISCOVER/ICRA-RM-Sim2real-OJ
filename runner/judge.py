@@ -134,8 +134,8 @@ class Runner:
             if not len(matched_list) == 1:
                 self.logger.warning("Data published by /judgement/markers_time has invalid form")
             matched_result = matched_list[0]
-            if matched_result[0] == "None":
-                result = "Illegal"
+            if matched_result[0] == "None" or matched_result[1] == "None" or matched_result[2] == "None":
+                result = matched_result
                 break
             else:
                 result = [float(i) for i in matched_result]
