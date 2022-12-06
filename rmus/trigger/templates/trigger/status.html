@@ -28,12 +28,25 @@
 <p>    
     Video Link: {{ object.video_link }}
 </p>
+<p>    
+    Run Type: {{ object.run_type }}
+</p>
 {% if object.log_file %}
 <p>
-    Log file: <a href="{{ log_file_url }}" download="log.txt">Download</a>
+    Log file 1: <a href="{{ log_file_url }}" download="log.txt">Download</a>
 </p>
 {% else %}
 <p>    
-    Log file is not available right now.
+    Log file 1 is not available right now.
+</p>
+{% endif %}
+
+{% if object.another_log_file %}
+<p>
+    Log file 2: <a href="{{ log_file_2_url }}" download="log2.txt">Download</a>
+</p>
+{% else %}
+<p>    
+    Log file 2 is not available right now.
 </p>
 {% endif %}

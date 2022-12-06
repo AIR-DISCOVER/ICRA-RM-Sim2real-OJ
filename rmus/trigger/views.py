@@ -24,11 +24,12 @@ def status(request, id):
     if testrun.count() > 0:
         testrun = testrun.get(id=id)
         log_file_url = testrun.log_file.url if testrun.log_file and hasattr(testrun.log_file, 'url') else None
+        log_file_2_url = testrun.another_log_file.url if testrun.another_log_file and hasattr(testrun.another_log_file, 'url') else None
         # from IPython import embed
         # embed()
         return render(
             request, 'trigger/status.html',
-            {'object': testrun, 'log_file_url': log_file_url})
+            {'object': testrun, 'log_file_url': log_file_url, 'log_file_2_url': log_file_2_url})
     else:
         raise Http404()
 
