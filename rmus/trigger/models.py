@@ -40,6 +40,7 @@ class TestRun(models.Model):
     run_type = models.IntegerField("Run Type")
 
     log_file = models.FileField()
+    another_log_file = models.FileField()
     def status_dict(self) -> dict:
         status = {
             "Run ID": self.id,

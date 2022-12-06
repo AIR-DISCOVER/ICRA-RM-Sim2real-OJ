@@ -187,7 +187,11 @@ def upload_log(request, id):
             run = run.get(id=id)
         else:
             return JsonResponse({'testrun_id': None})
-        run.log_file = request.FILES['log_file']
+        if 'log_file' in request.FILES:
+            run.log_file = request.FILES['log_file']
+        if 'another_log_file' in request.FILES:
+            run.another_log_file = request.FILES['another_log_file']
+        
         run.save()
         return JsonResponse({'testrun_id': run.id})
 
