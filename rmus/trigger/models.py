@@ -11,6 +11,7 @@ class TestRun(models.Model):
     ERROR = "ERROR"
     RETRY = "RETRYING"
     UNKNOWN = "UNKKNOWN"
+    CRASH = "CRASH"
     STATS = [
         (SUBMITTED, 'Submitted'),
         (WAITING, 'Waiting'),
@@ -18,7 +19,8 @@ class TestRun(models.Model):
         (FINISHED, 'Finished'),
         (ERROR, "Error occurred"),
         (UNKNOWN, "Unknown status"),
-        (RETRY, "Retrying")
+        (RETRY, "Retrying"),
+        (CRASH, "Crash")
     ]
     STATS_DICT = {i[0]: i[1] for i in STATS}
 

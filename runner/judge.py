@@ -114,7 +114,6 @@ class Runner:
             self.logger.warning(e)
 
     def run(self):
-        result = [float('inf') for _ in range(3)]
         if self.type != 1:
             self.client.exec_run(
                 '''/opt/ros/noetic/env.sh /opt/workspace/devel_isolated/env.sh /opt/ep_ws/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point "x: 0.0
@@ -141,10 +140,10 @@ class Runner:
             else:
                 result = [float(i) for i in matched_result]
                 if min(result) > 1e-5:
-                    result = max(result)
+                    # result = max(result)
                     break
             time.sleep(1)
-            result = [float('inf') for i in result if i < 1e-5]
+            result = [float('inf') if i < 1e-5 else i for i in result]
         server_log = self.server.logs().decode('utf-8')
         client_log = self.client.logs().decode('utf-8')
         return result, server_log, client_log
