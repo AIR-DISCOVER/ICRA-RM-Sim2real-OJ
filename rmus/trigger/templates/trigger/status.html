@@ -2,13 +2,10 @@
     Run ID: {{ object.id }}
 </p>
 <p>    
-    Runner ID: {{ object.runner_id }}
-</p>
-<p>    
     Status: {{ object.status }}
 </p>
 <p>    
-    Type: {{ object.testrun_type }}
+    Type: Task{{ object.run_type }}-{{ object.testrun_type }}
 </p>
 <p>    
     Submit Time: {{ object.submit_time }}
@@ -17,10 +14,7 @@
     Submitter Name: {{ object.submitter }}
 </p>
 <p>    
-    Image Name: {{ object.image_name }}
-</p>
-<p>    
-    Image Tag: {{ object.image_tag }}
+    Submitted Image: docker.discover-lab.com:55555/{{ object.image_name }}:{{ object.image_tag }}
 </p>
 <p>    
     Result: {{ object.result }}
@@ -28,25 +22,22 @@
 <p>    
     Video Link: {{ object.video_link }}
 </p>
-<p>    
-    Run Type: {{ object.run_type }}
-</p>
 {% if object.log_file %}
 <p>
-    Log file 1: <a href="{{ log_file_url }}" download="log.txt">Download</a>
-</p>
+    <a href="{{ log_file_url }}" download="log.txt">Log File 1</a>
+<!-- </p> -->
 {% else %}
-<p>    
+<p>
     Log file 1 is not available right now.
-</p>
+<!-- </p> -->
 {% endif %}
 
 {% if object.another_log_file %}
-<p>
-    Log file 2: <a href="{{ log_file_2_url }}" download="log2.txt">Download</a>
+<!-- <p> -->
+    <a href="{{ log_file_2_url }}" download="log2.txt">Log File 2</a>
 </p>
 {% else %}
-<p>    
+<!-- <p>     -->
     Log file 2 is not available right now.
 </p>
 {% endif %}
