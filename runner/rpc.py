@@ -23,12 +23,12 @@ class TaskManager(object):
             if client_image == old_task["image"]:
                 if old_task['status'] == "waiting":
                     self.task_list.pop(old_id)
-                    self.task_list[id] = {"image": client_image, "status": "waiting", "trigger_run_id": testrun_id}
+                    self.task_list[id] = {"image": client_image, "status": "waiting", "trigger_run_id": testrun_id, "run_type": run_type}
                     return id
                 elif old_task['status'] == 'running':
                     return 'invalid'
                 elif old_task['status'] == 'finished':
-                    self.task_list[id] = {"image": client_image, "status": "waiting", "trigger_run_id": testrun_id}
+                    self.task_list[id] = {"image": client_image, "status": "waiting", "trigger_run_id": testrun_id, "run_type": run_type}
                     return id
                 else:
                     return 'invalid'

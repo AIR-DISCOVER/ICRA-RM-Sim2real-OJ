@@ -42,6 +42,7 @@ class Runner:
             network=f"net-{self.id}",
         )
         self.logger.info("Core started")
+        os.makedirs(f'/tmp/save_video/{self.id}', exist_ok=True)
         self.server = self.docker_exe.containers.run(
             self.server_image,
             tty=True,
@@ -62,9 +63,10 @@ class Runner:
             ],
             volumes=[
                 "/tmp/.X11-unix:/tmp/.X11-unix",
+                f"/tmp/save_video/{self.id}:/tmp/save_video"
             ],
         )
-        self.logger.info("Server started")
+        self.logger.info(f"Server started on DISPLAY {self.DISPLAY}")
         if vis:
             self.server.exec_run(
                 '''/opt/ros/noetic/env.sh rosrun image_view image_view image:=/third_rgb''',
@@ -75,6 +77,17 @@ class Runner:
             self.logger.info("Visualization started")
         if wait_sec is not None:
             time.sleep(wait_sec)
+        print("Run task type: ", self.type)
+        if self.type != 1:
+            with time_limit(10):
+                result = self.server.exec_run(
+                    r'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point 0.0 0.0 0.0''',
+                    stdin=True,
+                    tty=True,
+                ).output.decode('utf-8')
+                print(result)
+                time.sleep(5)
+
         self.client = self.docker_exe.containers.run(
             self.client_image,
             command=None if not debug else "bash",
@@ -97,7 +110,7 @@ class Runner:
                 "/tmp/.X11-unix:/tmp/.X11-unix",
             ],
         )
-        self.logger.info("Client started")
+        self.logger.info(f"Client started on DISPLAY {self.DISPLAY}")
 
     def remove(self):
         def try_kill(container):
@@ -114,21 +127,21 @@ class Runner:
             self.logger.warning(e)
 
     def run(self):
-        if self.type != 1:
-            self.client.exec_run(
-                '''/opt/ros/noetic/env.sh /opt/workspace/devel_isolated/env.sh /opt/ep_ws/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point "x: 0.0
-    y: 0.0
-    z: 0.0"''',
-                stdin=True,
-                tty=True,
-            ).output.decode('utf-8')
-        for i in range(300):
-            result = self.ros_master.exec_run(
-                '/opt/ros/noetic/env.sh rostopic echo -n 1 /judgement/markers_time',
-                stdin=True,
-                tty=True,
-            ).output.decode('utf-8')
-            self.logger.info(str(i) + result)
+        self.server.exec_run(
+            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag record /third_rgb -O /tmp/save_video/out.bag''',
+            stdin=True,
+            tty=True,
+            detach=True,
+        )
+        self.logger.info("Start recording")
+        for i in range(20):
+            with time_limit(10):
+                result = self.ros_master.exec_run(
+                    '/opt/ros/noetic/env.sh rostopic echo -n 1 /judgement/markers_time',
+                    stdin=True,
+                    tty=True,
+                ).output.decode('utf-8')
+                self.logger.info("Counter #" + str(i) + str(result))
             
             matched_list = re.findall(r"data\:\s\"(.*?),\s(.*?),\s(.*?)\"", result)
             if not len(matched_list) == 1:
@@ -140,23 +153,49 @@ class Runner:
             else:
                 result = [float(i) for i in matched_result]
                 if min(result) > 1e-5:
-                    # result = max(result)
                     break
             time.sleep(1)
             result = [float('inf') if i < 1e-5 else i for i in result]
+        self.server.exec_run(
+            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag reindex /tmp/save_video/out.bag.active''',
+            stdin=True,
+            tty=True,
+            # detach=True,
+        )
+        self.server.exec_run(
+            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag fix /tmp/save_video/out.bag.active /tmp/save_video/out.bag''',
+            stdin=True,
+            tty=True,
+            # detach=True,
+        )
+        out = self.server.exec_run(
+            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh python3 /opt/record.py  -o /tmp/save_video/final.mp4 /tmp/save_video/out.bag''',
+            stdin=True,
+            tty=True,
+            # detach=True,
+        )
+        time.sleep(5)
+        print(out)
+        
         server_log = self.server.logs().decode('utf-8')
         client_log = self.client.logs().decode('utf-8')
+        
         return result, server_log, client_log
+    
+    def clean(self):
+        import shutil
+        shutil.rmtree(f'/tmp/save_video/{self.id}')
 
-def run(client_image: str, display: str = None, vis=False, run_id=None, run_type=1):
+def run(client_image: str, display: str = None, vis=False, run_id=None, run_type=1, online=True):
     try:
         # server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
-        server_image = "tb5zhh/icra-2023-server:latest"
+        server_image = 'server-final:latest'
         runner = Runner(server_image, client_image, display=display, run_type=run_type)
         runner.create(vis=vis, wait_sec=15)
-        # with time_limit(360):
         result, server_log, client_log = runner.run()
-        upload_log(run_id, server_log, client_log)
+        if online:
+            print(upload_log(run_id, server_log, client_log, f'/tmp/save_video/{runner.id}/final.mp4'))
+        runner.clean()
     except TimeoutException:
         result = "timeout"
     except Exception as e:
@@ -174,5 +213,6 @@ def run(client_image: str, display: str = None, vis=False, run_id=None, run_type
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    client_image = "docker.discover-lab.com:55555/rm-sim2real/client:tagtest"
-    print(run(client_image, 1))
+    client_image = "client-test:latest"
+    # client_image = "docker.discover-lab.com:55555/test/client:v3.0.0"
+    print(run(client_image, run_type=2))

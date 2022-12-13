@@ -43,6 +43,7 @@ class TestRun(models.Model):
 
     log_file = models.FileField()
     another_log_file = models.FileField()
+    video = models.FileField(null=True, blank=True, default=None)
     def status_dict(self) -> dict:
         status = {
             "Run ID": self.id,

@@ -25,11 +25,12 @@ def status(request, id):
         testrun = testrun.get(id=id)
         log_file_url = testrun.log_file.url if testrun.log_file and hasattr(testrun.log_file, 'url') else None
         log_file_2_url = testrun.another_log_file.url if testrun.another_log_file and hasattr(testrun.another_log_file, 'url') else None
+        video_url = testrun.video.url if testrun.video and hasattr(testrun.video, 'url') else None
         # from IPython import embed
         # embed()
         return render(
             request, 'trigger/status.html',
-            {'object': testrun, 'log_file_url': log_file_url, 'log_file_2_url': log_file_2_url})
+            {'object': testrun, 'log_file_url': log_file_url, 'log_file_2_url': log_file_2_url, 'video_url': video_url})
     else:
         raise Http404()
 
@@ -192,6 +193,8 @@ def upload_log(request, id):
             run.log_file = request.FILES['log_file']
         if 'another_log_file' in request.FILES:
             run.another_log_file = request.FILES['another_log_file']
+        if 'video' in request.FILES:
+            run.video = request.FILES['video']
         
         run.save()
         return JsonResponse({'testrun_id': run.id})

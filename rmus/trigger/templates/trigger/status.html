@@ -19,9 +19,15 @@
 <p>    
     Result: {{ object.result }}
 </p>
-<p>    
-    Video Link: {{ object.video_link }}
-</p>
+{% if object.video %}
+<p>
+    <a href="{{ video_url }}" download="video.mp4">Video</a>
+<!-- </p> -->
+{% else %}
+<p>
+    Video is not available right now.
+<!-- </p> -->
+{% endif %}
 {% if object.log_file %}
 <p>
     <a href="{{ log_file_url }}" download="log.txt">Log File 1</a>
