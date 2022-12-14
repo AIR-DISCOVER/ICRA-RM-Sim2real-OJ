@@ -29,11 +29,11 @@
 <!-- </p> -->
 {% endif %}
 {% if object.log_file %}
-<p>
+{% comment %} <p> {% endcomment %}
     <a href="{{ log_file_url }}" download="log.txt">Log File 1</a>
 <!-- </p> -->
 {% else %}
-<p>
+{% comment %} <p> {% endcomment %}
     Log file 1 is not available right now.
 <!-- </p> -->
 {% endif %}
