@@ -203,7 +203,6 @@ class Runner:
 def run(client_image: str, display: str = None, vis=False, run_id=None, run_type=1, online=True):
     try:
         server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
-        server_image = 'server-final:latest'
         runner = Runner(server_image, client_image, display=display, run_type=run_type)
         runner.create(vis=vis, wait_sec=15)
         result, server_log, client_log = runner.run()
@@ -211,7 +210,7 @@ def run(client_image: str, display: str = None, vis=False, run_id=None, run_type
             print(upload_log(run_id, server_log=server_log, client_log=client_log))
             if os.path.isfile(f'/tmp/save_video/{runner.id}/final.mp4'):
                 print(upload_log(run_id, video=f'/tmp/save_video/{runner.id}/final.mp4'))
-        # runner.clean()
+        runner.clean()
     except TimeoutException:
         result = "timeout"
     except Exception as e:
