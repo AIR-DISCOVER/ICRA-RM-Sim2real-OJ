@@ -77,21 +77,20 @@ class Runner:
             self.logger.info("Visualization started")
         if wait_sec is not None:
             time.sleep(wait_sec)
-        print("Run task type: ", self.type)
+        self.logger.info("Run task type: " + str(self.type))
         if self.type != 1:
-            result = self.server.exec_run(
+            self.server.exec_run(
                 r'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rostopic pub -1 /reset geometry_msgs/Point 0.0 0.0 0.0''',
                 stdin=True,
                 tty=True,
                 detach=True,
             )
-            print(result)
             time.sleep(5)
 
         self.client = self.docker_exe.containers.run(
             self.client_image,
             command=None if not debug else "bash",
-            cpuset_cpus="5",
+            nano_cpus=8000000000,
             mem_limit="8192m",
             tty=True,
             stdin_open=True,
@@ -127,14 +126,14 @@ class Runner:
             self.logger.warning(e)
 
     def run(self):
-        self.server.exec_run(
-            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag record /third_rgb -O /tmp/save_video/out.bag __name:=record''',
+        recorded = self.server.exec_run(
+            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag record -O /tmp/save_video/out.bag /third_rgb  __name:=record''',
             stdin=True,
             tty=True,
-            detach=True,
+            detach=True
         )
         self.logger.info("Start recording")
-        for i in range(180):
+        for i in range(10):
             file = self.ros_master.exec_run(
                 '/opt/ros/noetic/env.sh rostopic echo -n 1 /judgement/markers_time',
                 stdin=True,
@@ -164,33 +163,33 @@ class Runner:
                 if min(result) > 1e-5:
                     break
             time.sleep(1)
-            result = [float('inf') if i < 1e-5 else i for i in result] # rosnode kill /my_bag
-        self.server.exec_run(
+            result = [float('inf') if i < 1e-5 else i for i in result] 
+        self.logger.info(self.server.exec_run(
             fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosnode kill /record''',
             stdin=True,
             tty=True,
             # detach=True,
-        )
+        ).output.decode('utf-8'))
+        time.sleep(3)
         # self.server.exec_run(
-        #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag reindex /tmp/save_video/out_f.bag.active''',
+        #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag reindex /tmp/save_video/out.bag.active''',
         #     stdin=True,
         #     tty=True,
         #     # detach=True,
         # )
         # self.server.exec_run(
-        #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag fix /tmp/save_video/out_f.bag.active /tmp/save_video/out_f.bag''',
+        #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag fix /tmp/save_video/out.bag.active /tmp/save_video/out.bag''',
         #     stdin=True,
         #     tty=True,
         #     # detach=True,
         # )
         out = self.server.exec_run(
-            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh python3 /opt/record.py  -o /tmp/save_video/final.mp4 /tmp/save_video/out.bag''',
+            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh python3 /opt/record.py -v -o /tmp/save_video/final.mp4 /tmp/save_video/out.bag''',
             stdin=True,
             tty=True,
             # detach=True,
-        )
-        time.sleep(5)
-        print(out.output.decode('utf-8'))
+        ).output.decode('utf-8')
+        self.logger.info(out)
         
         server_log = self.server.logs().decode('utf-8')
         client_log = self.client.logs().decode('utf-8')
@@ -203,14 +202,15 @@ class Runner:
 
 def run(client_image: str, display: str = None, vis=False, run_id=None, run_type=1, online=True):
     try:
-        # server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
+        server_image = "docker.discover-lab.com:55555/rm-sim2real/server:latest"
         server_image = 'server-final:latest'
         runner = Runner(server_image, client_image, display=display, run_type=run_type)
         runner.create(vis=vis, wait_sec=15)
         result, server_log, client_log = runner.run()
         if online:
             print(upload_log(run_id, server_log=server_log, client_log=client_log))
-            print(upload_log(run_id, video=f'/tmp/save_video/{runner.id}/final.mp4'))
+            if os.path.isfile(f'/tmp/save_video/{runner.id}/final.mp4'):
+                print(upload_log(run_id, video=f'/tmp/save_video/{runner.id}/final.mp4'))
         # runner.clean()
     except TimeoutException:
         result = "timeout"
@@ -229,6 +229,5 @@ def run(client_image: str, display: str = None, vis=False, run_id=None, run_type
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    client_image = "client-test:latest"
-    # client_image = "docker.discover-lab.com:55555/test/client:v3.0.0"
+    client_image = "docker.discover-lab.com:55555/test/client:v3.0.0"
     print(run(client_image, run_type=2, run_id=172))
