@@ -8,26 +8,37 @@ from .secret import AUTH_HEADER, USER_AUTH_HEADER
 from django_q.tasks import async_task, schedule
 from django_q.models import Schedule
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
+from hashlib import sha256
+import json
 
+with open('group.json') as f:
+    GROUP_MAPPING = json.load(f)
 
 # Create your views here.
-def index(request):
-    testrun_list = TestRun.objects.all()
+def index(request, group_digest=''):
+    if "HTTP_AUTHORIZATION" in request.META and request.META["HTTP_AUTHORIZATION"] == AUTH_HEADER:
+        testrun_list = TestRun.objects.all()
+    else:
+        testrun_list = TestRun.objects.filter(group=GROUP_MAPPING.get(group_digest, ''))
     return render(request, 'trigger/index.html', {
         'testrun_list': testrun_list,
     })
 
 
 def status(request, id):
-    testrun = TestRun.objects.filter(id=id)
+    testrun = TestRun.objects.filter(digest=id)
     if testrun.count() > 0:
-        testrun = testrun.get(id=id)
+        testrun = testrun.get(digest=id)
         log_file_url = testrun.log_file.url if testrun.log_file and hasattr(testrun.log_file, 'url') else None
         log_file_2_url = testrun.another_log_file.url if testrun.another_log_file and hasattr(testrun.another_log_file, 'url') else None
-        video_url = testrun.video.url if testrun.video and hasattr(testrun.video, 'url') else None
-        # from IPython import embed
-        # embed()
+        if testrun.video and hasattr(testrun.video, 'url'):
+            video_url = testrun.video.url
+        elif testrun.video_link:
+            video_url = testrun.video_link
+        else:
+            video_url = None
+
         return render(
             request, 'trigger/status.html',
             {'object': testrun, 'log_file_url': log_file_url, 'log_file_2_url': log_file_2_url, 'video_url': video_url})
@@ -60,7 +71,7 @@ def status(request, id):
 
 
 @csrf_exempt
-def create_testrun(request, run_type=1):
+def create_testrun(request, run_type=2):
     try:
         assert request.META["HTTP_AUTHORIZATION"] == USER_AUTH_HEADER
         assert request.method == 'POST'
@@ -70,16 +81,23 @@ def create_testrun(request, run_type=1):
         submitter = info['operator']
         timestamp = int(info['occur_at'])
         repo = info['event_data']['repository']['repo_full_name']
+        group = info['event_data']['repository']['namespace']
         tag = info['event_data']['resources'][0]['resource_url'].split(':')[-1]
+        if len(tag) > 40:
+            return HttpResponseServerError()
         digest = info['event_data']['resources'][0]['digest']
-        print(repo, tag, digest)
+
+        shasum = sha256(('salt'+str(timestamp)+ 'repo' + 'tag').encode()).hexdigest()
+        print(repo, tag, digest, shasum)
         run = TestRun(
             submit_time=timestamp,
             submitter=submitter,
             image_name=repo,
             image_tag=tag,
             image_digest=digest,
-            run_type=run_type
+            run_type=run_type,
+            digest=shasum,
+            group=group,
         )
         run.save()
 
@@ -118,7 +136,8 @@ def create_real_testrun(request):
         jstring = request.body.decode('UTF-8')
         info = json.loads(jstring)
         logging.info(info)
-
+        group = info['image_name'].split('/')[1]
+        shasum = sha256(('salt' + str(int(datetime.now().timestamp()))))
         run = TestRun(
             submit_time=info['submit_time'],
             submitter=info['submitter'],
@@ -127,6 +146,9 @@ def create_real_testrun(request):
             image_digest=info['image_digest'],
             video_link=info['video_link'],
             testrun_type='Real',
+            run_type=2,
+            digest=shasum,
+            group=group
         )
         run.save()
         return JsonResponse({'testrun_id': run.id})

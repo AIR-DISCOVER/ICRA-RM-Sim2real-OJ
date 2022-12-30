@@ -30,7 +30,7 @@
 {% endif %}
 {% if object.log_file %}
 {% comment %} <p> {% endcomment %}
-    <a href="{{ log_file_url }}" download="log.txt">Log File 1</a>
+    <a href="{{ log_file_url }}" download="log.txt">Server Log</a>
 <!-- </p> -->
 {% else %}
 {% comment %} <p> {% endcomment %}
@@ -40,7 +40,7 @@
 
 {% if object.another_log_file %}
 <!-- <p> -->
-    <a href="{{ log_file_2_url }}" download="log2.txt">Log File 2</a>
+    <a href="{{ log_file_2_url }}" download="log2.txt">Client Log</a>
 </p>
 {% else %}
 <!-- <p>     -->

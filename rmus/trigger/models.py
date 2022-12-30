@@ -12,6 +12,7 @@ class TestRun(models.Model):
     RETRY = "RETRYING"
     UNKNOWN = "UNKKNOWN"
     CRASH = "CRASH"
+    TIMEOUT = "TIMEOUT"
     STATS = [
         (SUBMITTED, 'Submitted'),
         (WAITING, 'Waiting'),
@@ -20,7 +21,8 @@ class TestRun(models.Model):
         (ERROR, "Error occurred"),
         (UNKNOWN, "Unknown status"),
         (RETRY, "Retrying"),
-        (CRASH, "Crash")
+        (CRASH, "Crash"),
+        (TIMEOUT, "TIMEOUT")
     ]
     STATS_DICT = {i[0]: i[1] for i in STATS}
 
@@ -40,6 +42,8 @@ class TestRun(models.Model):
                               default=SUBMITTED)
     result = models.TextField("Run Result", max_length=1000)
     run_type = models.IntegerField("Run Type")
+    digest = models.CharField("SHA256", max_length=200)
+    group = models.CharField("Group Name", max_length=100)
 
     log_file = models.FileField()
     another_log_file = models.FileField()
