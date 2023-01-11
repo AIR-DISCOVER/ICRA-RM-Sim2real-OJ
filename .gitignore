@@ -3,3 +3,5 @@
 secret.sh
 rmus/trigger/secret.py
 *.sqlite3
+rmus/group.json
+generate_sha.py
