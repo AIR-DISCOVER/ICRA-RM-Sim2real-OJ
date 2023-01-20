@@ -133,7 +133,7 @@ class Runner:
             detach=True
         )
         self.logger.info("Start recording")
-        for i in range(10):
+        for i in range(300):
             file = self.ros_master.exec_run(
                 '/opt/ros/noetic/env.sh rostopic echo -n 1 /judgement/markers_time',
                 stdin=True,
