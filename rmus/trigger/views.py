@@ -137,7 +137,7 @@ def create_real_testrun(request):
         info = json.loads(jstring)
         logging.info(info)
         group = info['image_name'].split('/')[1]
-        shasum = sha256(('salt' + str(int(datetime.now().timestamp()))))
+        shasum = sha256(('salt' + str(int(datetime.now().timestamp()))).encode()).hexdigest()
         run = TestRun(
             submit_time=info['submit_time'],
             submitter=info['submitter'],
