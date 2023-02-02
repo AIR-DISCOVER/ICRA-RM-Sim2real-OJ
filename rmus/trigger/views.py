@@ -34,7 +34,7 @@ def status(request, id):
         log_file_2_url = testrun.another_log_file.url if testrun.another_log_file and hasattr(testrun.another_log_file, 'url') else None
         if testrun.video and hasattr(testrun.video, 'url'):
             video_url = testrun.video.url
-        elif testrun.video_link:
+        elif testrun.video_link is not None:
             video_url = testrun.video_link
         else:
             video_url = None
@@ -113,15 +113,12 @@ def create_testrun(request, run_type=2):
 
 # {
 #     "runner": "None",
-#     "status": "SUBMITTED",
-#     "run_result": "time of evalutaion",
 #     "submit_time": 1667012162,
 #     "submitter": 'Name',
 #     "image_name": 'docker.discover-lab.com:55555/repo/image',
 #     "image_tag": 'latest',
 #     "image_digest": 'sha256:abcdef...xx',
 #     "video_link": 'https://...',
-#     "log": "logabcdef",
 # }
 
 @csrf_exempt
@@ -164,8 +161,7 @@ def create_real_testrun(request):
 #     "runner": "None",
 #     "status": "FINISHED",
 #     "run_result": "104s",
-#     "video_link": 'https://...',
-#     "log": "log text",
+#     "video_link": 'https://...'
 # }
 
 @csrf_exempt
