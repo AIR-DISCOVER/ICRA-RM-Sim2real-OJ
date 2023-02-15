@@ -164,12 +164,15 @@ class Runner:
                     break
             time.sleep(1)
             result = [float('inf') if i < 1e-5 else i for i in result] 
-        self.logger.info(self.server.exec_run(
-            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosnode kill /record''',
-            stdin=True,
-            tty=True,
-            # detach=True,
-        ).output.decode('utf-8'))
+        # self.logger.warning('wtf')
+        # text = self.server.exec_run(
+        #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosnode kill /record''',
+        #     stdin=True,
+        #     tty=True,
+        #     # detach=True,
+        # ).output.decode('utf-8')
+        os.system(f"docker exec -it server-{self.id} /opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosnode kill /record")
+
         time.sleep(3)
         # self.server.exec_run(
         #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh rosbag reindex /tmp/save_video/out.bag.active''',
@@ -183,13 +186,16 @@ class Runner:
         #     tty=True,
         #     # detach=True,
         # )
-        out = self.server.exec_run(
-            fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh python3 /opt/record.py -v -o /tmp/save_video/final.mp4 /tmp/save_video/out.bag''',
-            stdin=True,
-            tty=True,
-            # detach=True,
-        ).output.decode('utf-8')
-        self.logger.info(out)
+        # out = self.server.exec_run(
+        #     fr'''/opt/ros/noetic/env.sh /opt/workspace/devel/env.sh python3 /opt/record.py -v -o /tmp/save_video/final.mp4 /tmp/save_video/out.bag''',
+        #     stdin=True,
+        #     tty=True,
+        #     # detach=True,
+        # ).output.decode('utf-8')
+        os.system(f"docker exec -it server-{self.id} /opt/ros/noetic/env.sh /opt/workspace/devel/env.sh python3 /opt/record.py -v -o /tmp/save_video/final.mp4 /tmp/save_video/out.bag")
+
+        # self.logger.warning('wtf3')
+        # self.logger.info(out)
         
         server_log = self.server.logs().decode('utf-8')
         client_log = self.client.logs().decode('utf-8')
@@ -207,15 +213,16 @@ def run(client_image: str, display: str = None, vis=False, run_id=None, run_type
         runner.create(vis=vis, wait_sec=15)
         result, server_log, client_log = runner.run()
         if online:
-            print(upload_log(run_id, server_log=server_log, client_log=client_log))
+            logging.info(upload_log(run_id, server_log=server_log, client_log=client_log))
             if os.path.isfile(f'/tmp/save_video/{runner.id}/final.mp4'):
-                print(upload_log(run_id, video=f'/tmp/save_video/{runner.id}/final.mp4'))
+                logging.info(upload_log(run_id, video=f'/tmp/save_video/{runner.id}/final.mp4'))
+            
         runner.clean()
     except TimeoutException:
         result = "timeout"
     except Exception as e:
-        print(type(e))
-        print(e)
+        logging.error(type(e))
+        logging.error(e)
         result = 'error'
     finally:
         try:
@@ -229,4 +236,6 @@ def run(client_image: str, display: str = None, vis=False, run_id=None, run_type
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     client_image = "docker.discover-lab.com:55555/test/client:v3.0.0"
-    print(run(client_image, run_type=2, run_id=172))
+    client_image = "docker.discover-lab.com:55555/dream-pioneer/client:dp-ep-v1.0"
+    client_image = "docker.discover-lab.com:55555/critical-hit/client:real-v1.2"
+    logging.info(run(client_image, run_type=2, run_id="4b4b643493cdb96bd0c0b9dd43542f364544d664154a0e83c858b4c7e0443c7c"))

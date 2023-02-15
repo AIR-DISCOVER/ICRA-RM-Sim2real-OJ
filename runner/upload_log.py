@@ -1,5 +1,8 @@
 import requests
 import tempfile
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('wtf')
 
 def upload_log(testrun_id, server_log=None, client_log=None, video=None):
     url = f'https://sim2real.discover-lab.com:11011/apis/{testrun_id}/upload_log/'
@@ -33,4 +36,4 @@ def upload_log(testrun_id, server_log=None, client_log=None, video=None):
     return response
 
 if __name__ == '__main__':
-    print(upload_log(154, 'heihei', 'haha', '/tmp/save_video/8c33cf56-7b28-11ed-afbd-e37d4e3cb615/final.mp4' ))
+    logger.info(upload_log(154, 'heihei', 'haha', '/tmp/save_video/8c33cf56-7b28-11ed-afbd-e37d4e3cb615/final.mp4' ))
